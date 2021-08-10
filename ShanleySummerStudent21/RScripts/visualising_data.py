@@ -75,7 +75,6 @@ def box_plot(df,loc ,fname):
     y.figure.savefig((loc+"scatter_{}.png".format(fname)))
 
 def hists(df, loc, name):
-    # todo plot for each col of df, hd against wt
     df = pd.DataFrame(df)
     fig, ax = plt.subplots()
     df.hist(by="Conditions", ax = ax)

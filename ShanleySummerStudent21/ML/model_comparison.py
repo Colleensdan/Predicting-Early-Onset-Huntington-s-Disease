@@ -16,7 +16,7 @@ from ML import *
 loc = r"../InputForML/SMOTE/"
 chdir(loc)
 
-for filename in glob.glob('*X*'):
+for filename in glob.glob('*X_miRNA*'):
     with open(os.path.join(os.getcwd(), filename), 'r') as f:
         X_train, X_test, y_train, y_test = get_age_files(f, filename)
 

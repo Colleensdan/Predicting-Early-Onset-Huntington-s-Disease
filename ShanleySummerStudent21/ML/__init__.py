@@ -105,8 +105,26 @@ def get_age_files(x_f, filename, remove_duplicates=True):
     else:
         y=y.drop(columns="Unnamed: 0")
         x = x.drop(columns="Unnamed: 0")
+    val_counts=y.value_counts()
 
-    return train_test_split(x,y,test_size=0.2)
+    # find rows where there is only one of HD or WT
+    if 1 in val_counts.values:
+        condition = val_counts.isin([1])
+
+        # find the unique category
+        _ = str(condition[condition==True].index.values.tolist())
+        # df containing nans is produced except for the phenotype (HD/WT)
+        cat = _.replace("[('", "").replace("',)]", "")
+        index = (y[y == cat]).dropna().index.values.astype(int)
+        # duplicate the category for y
+        row = pd.Series({"Conditions": cat})
+        y = y.append(row, ignore_index=True)
+        # duplicate the category for x
+        row = x.iloc[index]
+        x=x.append(row, ignore_index=True)
+
+
+    return train_test_split(x,y,test_size=0.2, stratify=y)
     
 
 def open_files(f, filename):
@@ -249,13 +267,14 @@ def evaluate_model(y_pred, y_true, X_test, y_test, clf, target_names, X_train, y
 
         # confusion matricies
         document.add_heading("Confusion Matrices", level=2)
-        memfile = io.BytesIO()
+
         np.set_printoptions(precision=2)
 
-        # Plot non-normalized confusion matrix
+        # Plot confusion matrices
         titles_options = [("Confusion matrix, without normalization", None),
                           ("Normalized confusion matrix", 'true')]
         for title, normalize in titles_options:
+            memfile = io.BytesIO()
             disp = plot_confusion_matrix(clf, X_test, y_test,
                                          display_labels=["HD", "WT"],
                                          cmap=plt.cm.Blues,
@@ -264,7 +283,7 @@ def evaluate_model(y_pred, y_true, X_test, y_test, clf, target_names, X_train, y
 
             plt.savefig(memfile)
             document.add_picture(memfile, width=Inches(5))
-        memfile.close()
+            memfile.close()
 
         # classification report
         document.add_heading("Classification report", level=2)
@@ -277,37 +296,43 @@ def evaluate_model(y_pred, y_true, X_test, y_test, clf, target_names, X_train, y
         document.add_paragraph("F1 {}".format(metrics.f1_score(y_true, y_pred, average="binary", pos_label="HD")), style= "List Bullet")
 
         # Decision boundaries plot
+
         document.add_heading("Decision Surface of model")
         memfile = io.BytesIO()
-        plot_decision_boundaries.DecisionBoundaries().plot(X_train, y_train, memfile)
+        m = clf
+        plot_decision_boundaries.DecisionBoundaries(model=m, name=fname).plot(X_train, y_train, memfile)
         plt.savefig(memfile)
         document.add_picture(memfile, width=Inches(5))
         memfile.close()
 
-        document.add_heading("ROC Curve", level = 2)
-        memfile = io.BytesIO()
-        y_score = clf.decision_function(X_test)
+        try:
+            document.add_heading("ROC Curve", level = 2)
+            memfile = io.BytesIO()
+            y_score = clf.decision_function(X_test)
 
-        # precision recall curve
-        prec, recall, _ = precision_recall_curve(y_test, y_score,
-                                                 pos_label=clf.classes_[1])
-        pr_display = PrecisionRecallDisplay(precision=prec,     recall=recall).plot()
+            # precision recall curve
+            prec, recall, _ = precision_recall_curve(y_test, y_score,
+                                                     pos_label=clf.classes_[1])
+            pr_display = PrecisionRecallDisplay(precision=prec,     recall=recall).plot()
 
-        # combine plots
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
-        fpr, tpr, _ = roc_curve(y_test, y_score, pos_label=clf.classes_[1])
-        roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr)
-        roc_display.plot(ax=ax1)
-        pr_display.plot(ax=ax2)
-        plt.savefig(memfile)
-        document.add_picture(memfile, width=Inches(5))
-        memfile.close()
+            # combine plots
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
+            fpr, tpr, _ = roc_curve(y_test, y_score, pos_label=clf.classes_[1])
+            roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr)
+            roc_display.plot(ax=ax1)
+            pr_display.plot(ax=ax2)
+            plt.savefig(memfile)
+            document.add_picture(memfile, width=Inches(5))
+            memfile.close()
+        except AttributeError:
+            print("Have not implemented ROC with this classifier yet")
 
         # feature importance
+        """
         memfile = io.BytesIO()
         y = permutation_based_feature_importance(clf, X_train, y_train, X_train.columns, save=True, filename = memfile)
         document.add_picture(memfile, width=Inches(5))
         memfile.close()
-
+        """
         document.save(r'../../ML/Classifiers/{}.docx'.format(fname))
         print("Saved {}.docx".format(fname), "in ../../ML/Classifiers/")

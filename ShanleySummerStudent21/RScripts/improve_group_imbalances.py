@@ -15,7 +15,10 @@ def perform_smote(RNA, X_file_name, y_file_name):
     X, y = get_X_y(RNA)
     X= X.drop(columns ="Samples")
     X_resampled, y_resampled = SVMSMOTE().fit_resample(X, y)
-    # save files
+    X_resampled = X_resampled.drop_duplicates()
+    y_resampled = y_resampled.iloc[X_resampled.index]
+
+# save files
     loc = "../../../../InputForML/SMOTE/{}.csv"
 
     X_resampled.to_csv(loc.format(X_file_name))
@@ -31,7 +34,8 @@ def oversample(df, n):
     # select n terms from minority class
     added = m.sample(n, replace=True)
     # add these to the dataset
-    return df.append(df.loc[added.index])
+    df =df.append(df.loc[added.index])
+    return df.drop_duplicates
 
 dir = r"../Early Detection/Data/FilteredData/age"
 chdir(dir)
@@ -44,5 +48,6 @@ for filename in glob.glob('*train*'):
         # potential biases from oversampling
         rna = rna.append(rna)
 
+        # then duplicates are deleted here
         perform_smote(rna, ("X_"+n), ("y_"+n))
 

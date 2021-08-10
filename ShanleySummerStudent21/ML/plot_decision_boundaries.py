@@ -17,10 +17,10 @@ class DecisionBoundaries:
 
     if calling plot_all, specify loc when calling
     """
-    def __init__(self):
+    def __init__(self, model = svm.SVC(kernel='linear'), name="linear SVC"):
         self.loc = ""
-        self.model = svm.SVC(kernel='linear')
-        self.model_name = "linear SVC"
+        self.model = model
+        self.model_name = name
 
     def plot(self, X, y, fname):
         le = LabelEncoder()

@@ -1,5 +1,4 @@
-# Title     : TODO
-# Objective : TODO
+
 # Created by: Colle
 # Created on: 07/07/2021
 
@@ -72,7 +71,6 @@ transform_for_ml <- function(RNA_data, file_name, colData)
     stop("NA exists in dataframe:",file_name ,". Check that all columns in the df have been parsed in the get columns function")
   }
 
-  # todo all rows (or is it columns??) which are equal to 0 should be removed
   loc <-"C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Preprocessed_Data\\"
   f <- paste(loc,file_name,".csv", sep="")
   write.csv(RNA_ML, file=f)
