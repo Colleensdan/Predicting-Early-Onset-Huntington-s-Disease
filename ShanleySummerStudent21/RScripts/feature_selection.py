@@ -201,7 +201,7 @@ def run():
                 mRNA_validation = pd.read_csv(name + "_test.csv")
                 X, y = get_X_y(mRNA_validation)
                 mRNAs_vals_comb = tidy_data(RNA_val_filtered, X, y)
-                mRNAs_vals_comb.to_csv((loc + name + "_validation.csv"))
+                mRNAs_vals_comb.to_csv((loc + d+ name + "_validation.csv"))
 
                 print("saved", name, "in", loc + d)
 
