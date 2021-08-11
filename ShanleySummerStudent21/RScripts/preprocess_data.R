@@ -52,7 +52,7 @@ getColnames <- function(RNA_df){
 ############################################
 # Transform RNAs into a form ready for ML
 
-transform_for_ml <- function(RNA_data, file_name, colData)
+transform_for_ml <- function(RNA_data, file_name, colData, loc)
   # data is transposed such that biomarkers are columns and each row entry represents one sample
 {
 
@@ -70,9 +70,6 @@ transform_for_ml <- function(RNA_data, file_name, colData)
   if (any(is.na(RNA_ML))){
     stop("NA exists in dataframe:",file_name ,". Check that all columns in the df have been parsed in the get columns function")
   }
-
-  # todo relative dirs
-  loc <-"C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Preprocessed_Data\\"
   f <- paste(loc,file_name,".csv", sep="")
   write.csv(RNA_ML, file=f)
   print(paste("saved ", f))
@@ -81,8 +78,8 @@ transform_for_ml <- function(RNA_data, file_name, colData)
 
 }
 
-split <- function(data, name){
-  loc <-"C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Preprocessed_Data\\test_train_splits\\"
+split <- function(data, name, loc){
+
   require(caTools)
   set.seed(101)
   sample = sample.split(data$Conditions, SplitRatio = .8)
@@ -92,32 +89,41 @@ split <- function(data, name){
   write.csv(train, file=tr)
   te <- paste(loc, name, "_test.csv", sep="")
   write.csv(test, file=te)
+  print(paste("saved", te))
 }
 
 
 ################################################
 
 setwd("C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Separated_Data\\normalized_age\\outliers")
-miRNA_2m <- read.csv("miRNA_2m.csv")
-miRNA_6m <- read.csv("miRNA_6m.csv")
-miRNA_10m <- read.csv("miRNA_10m.csv")
 
-mRNA_2m <- read.csv("mRNA_2m.csv")
-mRNA_6m <- read.csv("mRNA_6m.csv")
-mRNA_10m <- read.csv("mRNA_10m.csv")
+for (dir in c("outliers", "no_outliers")){
+  setwd(paste("..\\", dir, sep=""))
 
-rnas <- list(miRNA_2m, miRNA_6m, miRNA_10m, mRNA_2m, mRNA_6m, mRNA_10m)
-nrnas <- list("miRNA_2m", "miRNA_6m", "miRNA_10m", "mRNA_2m", "mRNA_6m", "mRNA_10m")
+  miRNA_2m <- read.csv("miRNA_2m.csv")
+  miRNA_6m <- read.csv("miRNA_6m.csv")
+  miRNA_10m <- read.csv("miRNA_10m.csv")
 
-i <- 0
-for (rna in rnas){
-  i<- i+1
+  mRNA_2m <- read.csv("mRNA_2m.csv")
+  mRNA_6m <- read.csv("mRNA_6m.csv")
+  mRNA_10m <- read.csv("mRNA_10m.csv")
 
-  col <- getColnames(rna)
-  df <- transform_for_ml(rna, nrnas[i], col)
-  #split(df, nrnas[i])
+  rnas <- list(miRNA_2m, miRNA_6m, miRNA_10m, mRNA_2m, mRNA_6m, mRNA_10m)
+  nrnas <- list("miRNA_2m", "miRNA_6m", "miRNA_10m", "mRNA_2m", "mRNA_6m", "mRNA_10m")
+
+
+  # save dir
+
+  loc_split <-paste(paste("..\\..\\..\\Preprocessed_Data\\test_train_splits\\", dir, sep=""), "\\", sep="")
+  loc_transform <- paste(paste("..\\..\\..\\Preprocessed_Data\\", dir, sep=""), "\\", sep="")
+  i <- 0
+  for (rna in rnas){
+    i<- i+1
+
+    col <- getColnames(rna)
+    df <- transform_for_ml(rna, nrnas[i], col, loc_transform)
+    split(df, nrnas[i], loc_split)
+  }
+
 }
-
-
-################################################
 print("data preprocessing complete")
