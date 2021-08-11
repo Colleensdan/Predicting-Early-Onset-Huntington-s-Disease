@@ -12,9 +12,11 @@ class Learn:
     def __init__(self, model = "SVM", evaluate = True):
         self.model = model
         self.evaluate = evaluate
+        self.current_loc = r"C:\Users\Colle\OneDrive\Documents\Boring\2021 Summer Internship\ShanleySummerStudent21\ML"
         self.loc = r'C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\InputForML\\SMOTE'
         self.models = ["SVM", "NB"]
 
+        os.chdir(self.current_loc)
         self.__validate()
 
         if self.model == "SVM":

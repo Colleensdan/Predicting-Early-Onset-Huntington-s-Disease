@@ -102,6 +102,7 @@ def get_age_files(x_f, filename, remove_duplicates=True):
         y = x.join(y)
         y=y["Conditions"]
         y= pd.DataFrame(y)
+
     else:
         y=y.drop(columns="Unnamed: 0")
         x = x.drop(columns="Unnamed: 0")

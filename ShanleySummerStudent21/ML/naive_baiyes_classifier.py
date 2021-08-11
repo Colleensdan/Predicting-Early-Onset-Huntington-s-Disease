@@ -5,7 +5,7 @@ from docx import Document
 
 def classifyNB(f, filename, save_document=True):
     """
-    classifies svm learner
+    classifies naive bayes learner
     :param f:
     :param filename:
     :param save_document:
