@@ -19,14 +19,12 @@ def filter_method(X, y, cols):
     # chi squared
     #X_proc= X.iloc[: , 1:]
     X_proc=X
-    print(X_proc.shape)
     chi = SelectPercentile(chi2, percentile=5)
     X_new = chi.fit_transform(X_proc, y)
     m = chi.get_support(indices=False)
     selected_columns = cols[m]
     X_new = pd.DataFrame(X_new)
     X_new.columns = selected_columns
-    print(X_new.shape)
     return X_new
 
 
@@ -35,13 +33,13 @@ def filter_method(X, y, cols):
 
 
 
-def recursive_ft(X,y, pickle_name, RNA_type):
+def recursive_ft(X,y, pickle_name, RNA_type, min_features_to_select):
     # Create the RFE object and compute a cross-validated score.
     svc = SVC(kernel="linear")
     # The "accuracy" scoring is proportional to the number of correct
     # classifications
 
-    min_features_to_select = 1  # Minimum number of features to consider
+
     rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(2),
                   scoring='accuracy',
                   min_features_to_select=min_features_to_select)
@@ -64,7 +62,7 @@ def recursive_ft(X,y, pickle_name, RNA_type):
                    len(rfecv.grid_scores_) + min_features_to_select),
              rfecv.grid_scores_)
 
-    loc = r"../../Figures/"
+    loc = r"../../../Figures/"
     name = loc+"finding_optimal_features_"+RNA_type+".png"
     plt.savefig(name)
 
@@ -90,13 +88,10 @@ def recursive_ft(X,y, pickle_name, RNA_type):
     # plt.show()
 
 
-def continue_from_rfecv(file_name, RNA_type, X):
+def continue_from_rfecv(file_name, RNA_type, X, min_features_to_select, loc):
     with open(file_name, 'rb') as f:
         rfecv = pickle.load(f)
 
-    print("Optimal number of features : %d" % rfecv.n_features_)
-
-    min_features_to_select = 1
     # Plot number of features VS. cross-validation scores
     plt.figure()
     plt.xlabel("Number of features selected")
@@ -105,9 +100,10 @@ def continue_from_rfecv(file_name, RNA_type, X):
                    len(rfecv.grid_scores_) + min_features_to_select),
              rfecv.grid_scores_)
 
-    loc = r"../../Figures/"
+
     name = loc+"finding_optimal_features_"+RNA_type+".png"
     plt.savefig(name)
+    print("saved features against cross validation scores:", name)
 
 
     dset = pd.DataFrame()
@@ -130,6 +126,7 @@ def continue_from_rfecv(file_name, RNA_type, X):
 
     name = loc+"relative_importance_"+RNA_type+".png"
     plt.savefig(name)
+    print("saved feature importance: ", name)
     # plt.show()
 
     important_features =dset.head(n=rfecv.n_features_).attr
@@ -150,84 +147,54 @@ def tidy_data(filtered, original, conditions):
 # calling
 
 def run():
-    dir = "C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Preprocessed_Data\\"
-    chdir(dir)
 
-    loc = r"../../FilteredData/age/"
-    """
-    #mRNA----------------------------------------------
-    mRNA = pd.read_csv("mRNA_train.csv")
-    X,y = get_X_y(mRNA)
-    X_new = filter_method(X,y)
-    # un comment this line if re-generating rfe
-    #recursive_ft(X_new,y, "mRNA_rfe", "mRNA")
-    print("mrna completttt")
+    loc = r"../../../FilteredData/"
 
-    mRNA_data, mRNAs = continue_from_rfecv("mRNA_rfe.pickle", "mRNA", X_new)
-
-    mRNAs_comb = tidy_data(mRNA_data, X, y)
-    mRNAs_comb.to_csv((loc+"mRNA_train.csv"))
-
-    mRNA_val = pd.read_csv("mRNA_validation.csv")
-    mRNA_val_filtered = mRNA_val[mRNAs]
-
-    mRNA_validation = pd.read_csv("mRNA_validation.csv")
-    X,y = get_X_y(mRNA_validation)
-    mRNAs_vals_comb = tidy_data(mRNA_val_filtered, X, y)
-    mRNAs_vals_comb.to_csv((loc+"mRNA_validation.csv"))
-
-    #miRNA------------------------------------------
-    miRNA = pd.read_csv("miRNA_train.csv")
-    X,y = get_X_y(miRNA)
-    X_new = filter_method(X,y)
-    # un comment this line if re-generating rfe
-    #recursive_ft(X_new,y, "miRNA_rfe", "miRNA")
-    print("pickled this mofo")
-    miRNA_data, miRNAs = continue_from_rfecv("miRNA_rfe.pickle", "miRNA", X_new)
-
-    miRNAs_comb = tidy_data(miRNA_data, X, y)
-    miRNAs_comb.to_csv((loc+"miRNA_train.csv"))
-
-    miRNA_val = pd.read_csv("miRNA_validation.csv")
-    miRNA_val_filtered = miRNA_val[miRNAs]
-
-    miRNA_validation = pd.read_csv("miRNA_validation.csv")
-    X,y = get_X_y(miRNA_validation)
-    miRNAs_vals_comb = tidy_data(miRNA_val_filtered, X, y)
-    miRNAs_vals_comb.to_csv((loc+"miRNA_validation.csv"))
-    """
     ##############################################################################
     # age data
-    dir = "C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Preprocessed_Data\\test_train_splits\\"
+    dir = "C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Preprocessed_Data\\test_train_splits\\outliers\\"
     chdir(dir)
-    for filename in glob.glob('*test.csv'):
-        with open(os.path.join(os.getcwd(), filename), 'r') as f:
-            name = filename.replace(".csv", "").replace("_test", "")
-            rna = pd.read_csv(f)
-            X,y = get_X_y(rna)
-            scaler = MinMaxScaler()
-            scaler.fit(X.drop(columns="Samples"))
-            X=scaler.transform(X.drop(columns="Samples"))
-            X = pd.DataFrame(X)
-            cols = rna.columns.drop(["Unnamed: 0", "Samples", "Conditions"])
-            X_new = filter_method(X,y, cols)
-            # un comment this line if re-generating rfe
-            recursive_ft(X_new,y, (name+"_rfe"), name)
+    dirs = ["outliers/", "no_outliers/"]
+    for d in dirs:
+        chdir(dir+"..\\"+d)
+        for filename in glob.glob('*test.csv'):
+            with open(os.path.join(os.getcwd(), filename), 'r') as f:
+                print("\nBeginning feature selection on", filename.replace(".csv", ""), "with", d.replace("/", ""))
+                name = filename.replace(".csv", "").replace("_test", "")
+                rna = pd.read_csv(f)
+                X,y = get_X_y(rna)
+                scaler = MinMaxScaler()
+                scaler.fit(X.drop(columns="Samples"))
+                X=scaler.transform(X.drop(columns="Samples"))
+                X = pd.DataFrame(X)
+                cols = rna.columns.drop(["Unnamed: 0", "Samples", "Conditions"])
+                X_new = filter_method(X,y, cols)
+                # un comment this line if re-generating rfe
 
-            RNA_data, RNAs = continue_from_rfecv((name+"_rfe.pickle"), name, X_new)
+                # select at minimum 1% of biomarkers for further investigation
+                min_features_to_select = [round(0.01*(len(X.columns))) if round(0.01*(len(X.columns))) > 1 else 1][0]
 
-            X["Samples"]=rna["Samples"]
+                # allow rcfev to be more powerful
+                #min_features_to_select = 1
+                recursive_ft(X_new,y, (name+"_rfe"), name, min_features_to_select)
 
-            RNAs_comb = tidy_data(RNA_data, X, y)
-            RNAs_comb.to_csv((loc+name+"_train.csv"))
+                fig_save_loc = r"../../../Figures/"+d
+                RNA_data, RNAs = continue_from_rfecv((name+"_rfe.pickle"), name, X_new, min_features_to_select,fig_save_loc)
 
-            RNA_val = pd.read_csv(name+"_test.csv")
-            RNA_val_filtered = RNA_val[RNAs]
+                X["Samples"]=rna["Samples"]
 
-            mRNA_validation = pd.read_csv(name+"_test.csv")
-            X,y = get_X_y(mRNA_validation)
-            mRNAs_vals_comb = tidy_data(RNA_val_filtered, X, y)
-            mRNAs_vals_comb.to_csv((loc+name+"_validation.csv"))
+                RNAs_comb = tidy_data(RNA_data, X, y)
+                RNAs_comb.to_csv((loc+d+name+"_train.csv"))
+
+                RNA_val = pd.read_csv(name+"_test.csv")
+                RNA_val_filtered = RNA_val[RNAs]
+
+                mRNA_validation = pd.read_csv(name+"_test.csv")
+                X,y = get_X_y(mRNA_validation)
+                mRNAs_vals_comb = tidy_data(RNA_val_filtered, X, y)
+                mRNAs_vals_comb.to_csv((loc+name+"_validation.csv"))
+
+                print("saved", name, "in", loc + d)
 
 run()
 ############################################################

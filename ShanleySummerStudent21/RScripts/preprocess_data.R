@@ -1,3 +1,5 @@
+# transposes data such that columns represent unique biomarkers, and then splits data in a 80/20 ratio for later training, and feature selection
+
 
 # Created by: Colle
 # Created on: 07/07/2021
