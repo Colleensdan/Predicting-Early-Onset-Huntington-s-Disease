@@ -1,4 +1,8 @@
-Hi Colleen, please read this file first. Also, I know you have exams ect to sort out first. This is will hopefully help as a guide when you do get started. 
+Run scikit-learn == 0.23.2 in order to optimise SVM classifier
+
+
+
+Hi Colleen, please read this file first. Also, I know you have exams ect to sort out first. This is will hopefully help as a guide when you do get started.
 -----------------------
 
 Biology

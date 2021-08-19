@@ -36,7 +36,7 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import PrecisionRecallDisplay
 import numpy as np
 import matplotlib.pyplot as plt
-
+from sklearn.naive_bayes import GaussianNB
 from sklearn import svm, datasets
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import plot_confusion_matrix
@@ -93,20 +93,24 @@ def get_X_y(df):
     return X, y
 
 def get_age_files(x_f, filename, remove_duplicates=True):
-    x = pd.read_csv(x_f)
+    X_train = pd.read_csv(x_f)
     y_n = filename.replace("X", "y")
-    y = pd.read_csv(y_n)
+    y_train = pd.read_csv(y_n)
+    val = pd.read_csv((filename.replace("X_", "")).replace("train", "validation"))
+    X_test, y_test = get_X_y(val)
+    X_test = X_test.drop(columns="Samples")
+
 
     if remove_duplicates:
-        x=x.drop(columns="Unnamed: 0").drop_duplicates()
-        y = x.join(y)
-        y=y["Conditions"]
-        y= pd.DataFrame(y)
+        X_train=X_train.drop(columns="Unnamed: 0").drop_duplicates()
+        y_train = X_train.join(y_train)
+        y_train=y_train["Conditions"]
+        y_train= pd.DataFrame(y_train)
 
     else:
-        y=y.drop(columns="Unnamed: 0")
-        x = x.drop(columns="Unnamed: 0")
-    val_counts=y.value_counts()
+        y_train=y_train.drop(columns="Unnamed: 0")
+        X_train = X_train.drop(columns="Unnamed: 0")
+    val_counts=y_train.value_counts()
 
     # find rows where there is only one of HD or WT
     if 1 in val_counts.values:
@@ -116,16 +120,15 @@ def get_age_files(x_f, filename, remove_duplicates=True):
         _ = str(condition[condition==True].index.values.tolist())
         # df containing nans is produced except for the phenotype (HD/WT)
         cat = _.replace("[('", "").replace("',)]", "")
-        index = (y[y == cat]).dropna().index.values.astype(int)
+        index = (y_train[y_train == cat]).dropna().index.values.astype(int)
         # duplicate the category for y
         row = pd.Series({"Conditions": cat})
-        y = y.append(row, ignore_index=True)
+        y_train = y_train.append(row, ignore_index=True)
         # duplicate the category for x
-        row = x.iloc[index]
-        x=x.append(row, ignore_index=True)
+        row = X_train.iloc[index]
+        X_train=X_train.append(row, ignore_index=True)
 
-
-    return train_test_split(x,y,test_size=0.2, stratify=y)
+    return X_train, X_test, y_train, y_test
     
 
 def open_files(f, filename):
@@ -145,9 +148,23 @@ def open_files(f, filename):
     y_test = y_test.drop(columns="Unnamed: 0")
     return X_train, X_test, y_train, y_test
 
-def permutation_based_feature_importance(clf, X, y, feature_names, save=False, filename = None, loc = ""):
-    result = permutation_importance(clf, X, y, n_repeats=10, random_state=0,
-                                    n_jobs=-1)
+def permutation_based_feature_importance(clf, X, y, feature_names, X_t, y_t, save=False, filename = None, loc = ""):
+    """
+    result = permutation_importance(rf, X_test, y_test, n_repeats=10,
+                                        random_state=42, n_jobs=2)
+    sorted_idx = result.importances_mean.argsort()
+
+    fig, ax = plt.subplots()
+    ax.boxplot(result.importances[sorted_idx].T,
+               vert=False, labels=X_test.columns[sorted_idx])
+    ax.set_title("Permutation Importances (test set)")
+    fig.tight_layout()
+    plt.show()
+"""
+    clf = GaussianNB()
+    clf.fit(X_t, y_t)
+
+    result = permutation_importance(clf, X, y)
 
     fig, ax = plt.subplots()
     sorted_idx = result.importances_mean.argsort()
@@ -298,14 +315,26 @@ def evaluate_model(y_pred, y_true, X_test, y_test, clf, target_names, X_train, y
 
         # Decision boundaries plot
 
-        document.add_heading("Decision Surface of model")
+        document.add_heading("Decision Surface of model - training")
         memfile = io.BytesIO()
         m = clf
-        plot_decision_boundaries.DecisionBoundaries(model=m, name=fname).plot(X_train, y_train, memfile)
+        pca_clf = plot_decision_boundaries.DecisionBoundaries(model=m, name=fname).plot(X_train, y_train, memfile)
         plt.savefig(memfile)
         document.add_picture(memfile, width=Inches(5))
         memfile.close()
 
+        """
+        # todo - Krutik, I can't imagine I will have time to finish this section. If you want to create figures to show the test data on the decision surface, i think you need to adjust the dimensions of the plot within plot_decision_boundaries.DecisionBoundaries(), so they are the same as on the first plot, thus, the decision surface will be comparable for both plots 
+        
+        document.add_heading("Decision Surface of model - testing")
+        memfile2 = io.BytesIO()
+        plot_decision_boundaries.DecisionBoundaries(model=pca_clf, name=fname).test_plot(pca_clf, X_test, y_test, memfile2, X_train, y_train)
+        plt.savefig(memfile2)
+        document.add_picture(memfile2, width=Inches(5))
+        memfile2.close()
+
+        """
+        """
         try:
             document.add_heading("ROC Curve", level = 2)
             memfile = io.BytesIO()
@@ -325,15 +354,18 @@ def evaluate_model(y_pred, y_true, X_test, y_test, clf, target_names, X_train, y
             plt.savefig(memfile)
             document.add_picture(memfile, width=Inches(5))
             memfile.close()
+
         except AttributeError:
             print("Have not implemented ROC with this classifier yet")
 
-        # feature importance
         """
+
+        # feature importance
+
         memfile = io.BytesIO()
-        y = permutation_based_feature_importance(clf, X_train, y_train, X_train.columns, save=True, filename = memfile)
+        y = permutation_based_feature_importance(clf, X_test, y_test, X_train.columns, X_train, y_train, save=True, filename = memfile)
         document.add_picture(memfile, width=Inches(5))
         memfile.close()
-        """
+
         document.save(r'../../ML/Classifiers/{}.docx'.format(fname))
         print("Saved {}.docx".format(fname), "in ../../ML/Classifiers/")

@@ -13,7 +13,9 @@ class Learn:
         self.model = model
         self.evaluate = evaluate
         self.current_loc = r"C:\Users\Colle\OneDrive\Documents\Boring\2021 Summer Internship\ShanleySummerStudent21\ML"
-        self.loc = r'C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\InputForML\\SMOTE'
+
+        # keeping outliers was seen to be more effective in training useful models
+        self.loc = r'C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\InputForML\\outliers\\'
         self.models = ["SVM", "NB"]
 
         os.chdir(self.current_loc)
@@ -31,7 +33,7 @@ class Learn:
 
         for filename in glob.glob('*X*'):
             with open(os.path.join(os.getcwd(), filename), 'r') as f:
-                clf, X_test, y_test, y_preds, classes , document, name,X_train, y_train = SVM_classifier.classifySVM(f, filename)
+                clf, X_test, y_test, y_preds, classes, document, name, X_train, y_train = SVM_classifier.classifySVM(f, filename)
 
                 if self.evaluate:
                     evaluate_model(y_preds, y_test, X_test, y_test, clf, classes, X_train, y_train, document=document, fname="SVM_"+name.replace("_train", ""))
@@ -55,4 +57,4 @@ class Learn:
 
 #svm =Learn()
 
-nb = Learn(model="NB")
+Learn(model="SVM")

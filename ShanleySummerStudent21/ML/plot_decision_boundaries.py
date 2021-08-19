@@ -24,14 +24,48 @@ class DecisionBoundaries:
 
     def plot(self, X, y, fname):
         le = LabelEncoder()
-        y = le.fit_transform(y)
         pca = PCA(n_components=2)
+
+        y = le.fit_transform(y)
         Xreduced = pca.fit_transform(X)
+
+
         try:
             clf = self.model.fit(Xreduced, y)
             fig, ax = plt.subplots()
             # title for the plots
-            # Set-up grid for plotting.
+            # Set-up grid for plotting - training.
+            X0, X1 = Xreduced[:, 0], Xreduced[:, 1]
+            xx, yy = self._make_meshgrid(X0, X1)
+
+            self._plot_contours(ax, clf, xx, yy, cmap=plt.cm.coolwarm, alpha=0.8)
+            ax.scatter(X0, X1, c=y, cmap=plt.cm.coolwarm, s=20, edgecolors='k')
+            ax.set_ylabel('PC2')
+            ax.set_xlabel('PC1')
+            ax.set_xticks(())
+            ax.set_yticks(())
+            ax.set_title('Decision surface using PCA transformed/projected features with')
+            ax.legend()
+            plt.savefig(fname)
+            return clf
+
+
+        except ValueError:
+            raise ValueError("The number of classes has to be greater than one; got 1 class")
+
+    def test_plot(self, clf, X, y, fname, X_o, y_o):
+        le = LabelEncoder()
+        pca = PCA(n_components=2)
+
+        y = le.fit_transform(y)
+        Xreduced = pca.fit_transform(X)
+
+
+        try:
+            fig, ax = plt.subplots()
+            # title for the plots
+            # Set-up grid for plotting - training.
+
             X0, X1 = Xreduced[:, 0], Xreduced[:, 1]
             xx, yy = self._make_meshgrid(X0, X1)
 
@@ -44,6 +78,9 @@ class DecisionBoundaries:
             ax.set_title('Decision surface using PCA transformed/projected features with', self.model_name)
             ax.legend()
             plt.savefig(fname)
+            return clf
+
+
         except ValueError:
             print("ValueError: The number of classes has to be greater than one; got 1 class")
 

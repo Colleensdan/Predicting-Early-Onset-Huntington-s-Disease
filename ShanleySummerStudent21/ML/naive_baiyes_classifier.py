@@ -15,6 +15,7 @@ def classifyNB(f, filename, save_document=True):
 
     X_train, X_test, y_train, y_test = get_age_files(f, filename, remove_duplicates=False)
 
+    X_train, X_test = _removeknownfeatures(X_train, X_test, filename)
     clf.fit(X_train, y_train)
 
     y_preds = clf.predict(X_test)
@@ -30,6 +31,32 @@ def classifyNB(f, filename, save_document=True):
 
     print(filename,'\nTraining Accuracy : %.3f'%clf.score(X_train, y_train))
     return clf, X_test, y_test, y_preds, ["HD", "WT"], rna,X_train, y_train
+
+
+def _removeknownfeatures(X_train, X_test, fname):
+    if "2m" in fname:
+        X_train = X_train.drop(columns=["mmu-miR-465a-3p",
+                                        "mmu-miR-465c-3p",
+                                        "mmu-miR-465b-3p",
+                                        "mmu-miR-20b-3p",
+                                        "mmu-miR-7008-5p",
+                                        "mmu-miR-1982-5p",
+                                        "mmu-miR-12182-3p",
+                                        "mmu-miR-10a-3p"])
+
+
+        X_test = X_test.drop(columns=["mmu-miR-465a-3p",
+                                      "mmu-miR-465c-3p",
+                                      "mmu-miR-465b-3p",
+                                      "mmu-miR-20b-3p",
+                                      "mmu-miR-7008-5p",
+                                      "mmu-miR-1982-5p",
+                                      "mmu-miR-12182-3p",
+                                      "mmu-miR-10a-3p"])
+
+
+        return X_train, X_test
+    return X_train, X_test
 """
 
 for filename in glob.glob('*X*'):

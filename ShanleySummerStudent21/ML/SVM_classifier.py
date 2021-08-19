@@ -4,8 +4,6 @@ from ML import *
 from docx import Document
 
 
-loc = r"../InputForML/SMOTE/"
-chdir(loc)
 
 def bayes_search_CV_init(self, estimator, search_spaces, optimizer_kwargs=None,
                          n_iter=50, scoring=None, fit_params=None, n_jobs=1,
@@ -41,15 +39,23 @@ def classifySVM(f, filename, save_document=True):
 
     X_train, X_test, y_train, y_test = get_age_files(f, filename, remove_duplicates=False)
 
+    X_train, X_test = _removeknownfeatures(X_train, X_test, filename)
+    # log-uniform: search over p = exp(x) by varying x
 
-        # log-uniform: understand as search over p = exp(x) by varying x
+
+    # There are some issues with optimising SVM using BayesSearchCV
+    # https://github.com/scikit-optimize/scikit-optimize/issues/1006
+    # ensure you are running 0.23.2
+    # https://scikit-learn.org/stable/install.html
+
     opt = BayesSearchCV(
         svm.SVC(),
         {
             'C': (1e-6, 1e+6, 'log-uniform'),
             'gamma': (1e-6, 1e+1, 'log-uniform'),
             'degree': (1, 8),  # integer valued parameter
-            'kernel': ['linear', 'poly', 'rbf'],  # categorical parameter
+            'kernel': ['linear', 'poly', 'rbf'],
+            # categorical parameter
         },
         n_iter=32,
         cv=3
@@ -57,7 +63,10 @@ def classifySVM(f, filename, save_document=True):
 
     opt.fit(X_train, y_train)
 
+    # use this line if using an optimised SVC
     print("val. score: %s" % opt.best_score_)
+
+
     print("test score: %s" % opt.score(X_test, y_test))
     #clf.fit(X_train, y_train)
     y_preds = opt.predict(X_test)
@@ -76,13 +85,27 @@ def classifySVM(f, filename, save_document=True):
 
 
 
-""":cvar
+def _removeknownfeatures(X_train, X_test, fname):
+    if "2m" in fname:
+        X_train = X_train.drop(columns=["mmu-miR-7008-5p",
+                                        "mmu-miR-20b-3p"])
 
+        X_test = X_test.drop(columns=["mmu-miR-7008-5p",
+                                      "mmu-miR-20b-3p"])
 
+        return X_train, X_test
 
-for filename in glob.glob('*X*'):
-    with open(os.path.join(os.getcwd(), filename), 'r') as f:
-        clf, X_test, y_test, y_preds, classes , document, name,X_train, y_train = classifySVM(f, filename)
-        evaluate_model(y_preds, y_test, X_test, y_test, clf, classes, X_train, y_train, document=document, fname=name.replace("_train", ""))
+    if "10m" in fname:
+        X_train = X_train.drop(columns=["mmu-miR-7037-3p",
+                                        "mmu-miR-3103-5p",
+                                        "mmu-miR-6998-5p",
+                                        "mmu-miR-693-3p"])
 
-"""
+        X_test = X_test.drop(columns=["mmu-miR-7037-3p",
+                                      "mmu-miR-3103-5p",
+                                      "mmu-miR-6998-5p",
+                                      "mmu-miR-693-3p"])
+
+        return X_train, X_test
+
+    return X_train, X_test
