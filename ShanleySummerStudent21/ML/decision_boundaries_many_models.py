@@ -1,4 +1,3 @@
-# todo implement with my data
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +15,9 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
+"""
+This isn't particularly relevant to the project - just interesting. Run, and enjoy!
+"""
 h = .02  # step size in the mesh
 
 names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",

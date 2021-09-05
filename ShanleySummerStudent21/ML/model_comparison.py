@@ -12,7 +12,9 @@ from sklearn.calibration import calibration_curve
 import os
 import glob
 from ML import *
-
+"""
+A standalone module which produces calibration plots to compare model performance
+"""
 loc = r"../InputForML/outliers"
 chdir(loc)
 for d in ["outliers", "no_outliers"]:

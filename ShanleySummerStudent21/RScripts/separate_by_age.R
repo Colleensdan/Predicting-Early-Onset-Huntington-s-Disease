@@ -1,7 +1,6 @@
 library(tidyverse)
 library(testthat)
 
-# todo continue analysis with and without outliers
 setwd("C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\NormalisedData")
 # import data
 

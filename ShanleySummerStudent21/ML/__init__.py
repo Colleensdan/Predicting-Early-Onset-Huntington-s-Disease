@@ -45,6 +45,8 @@ from sklearn.svm import SVC
 from sklearn import svm, datasets
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import plot_confusion_matrix
+from sklearn.model_selection import cross_val_score
+
 from sklearn.model_selection import learning_curve
 from sklearn.svm import SVC
 from sklearn import svm
@@ -87,12 +89,31 @@ RobustML = False
 
 
 def get_X_y(df):
+    """
+    Separates the phenotypes from the data, and tidies unnecessary columns
+    :param df (DataFrame) containing both targets and data with features
+    :return: X (DataFrame) tidied data with no targets
+    :return: y (DataFrame) targets of X (either HD or WT)
+    """
     X = df.loc[:, df.columns != 'Conditions']
     X = X.loc[:, X.columns != "Unnamed: 0"]
     y = df.loc[:, df.columns == 'Conditions']
     return X, y
 
 def get_age_files(x_f, filename, remove_duplicates=True):
+    """
+    Splits a dataframe into the X and y components and into test and training sets
+
+    Attributes:
+        :param x_f: file to read
+        :param filename: str - filename of file to read
+        :param remove_duplicates: (bool) if true, duplicates are removed. Keep to reduce overfitting
+
+        :return: X_train (DataFrame)
+        :return X_test (DataFrame)
+        :return y_train (DataFrame)
+        :return y_test (DataFrame)
+    """
     X_train = pd.read_csv(x_f)
     y_n = filename.replace("X", "y")
     y_train = pd.read_csv(y_n)
@@ -129,39 +150,23 @@ def get_age_files(x_f, filename, remove_duplicates=True):
         X_train=X_train.append(row, ignore_index=True)
 
     return X_train, X_test, y_train, y_test
-    
 
-def open_files(f, filename):
-    X_train = pd.read_csv(f)
-    X_train = X_train.drop(columns="Unnamed: 0")
-
-    y_train_v = filename.replace("X", "y")
-    y_train = pd.read_csv(y_train_v)
-    y_train = y_train.drop(columns="Unnamed: 0")
-
-    X_test_v = filename.replace("train", "validate")
-    X_test = pd.read_csv(X_test_v)
-    X_test = X_test.drop(columns="Unnamed: 0")
-
-    y_test_v = filename.replace("X_train", "y_validate")
-    y_test = pd.read_csv(y_test_v)
-    y_test = y_test.drop(columns="Unnamed: 0")
-    return X_train, X_test, y_train, y_test
 
 def permutation_based_feature_importance(clf, X, y, feature_names, X_t, y_t, save=False, filename = None, loc = ""):
     """
-    result = permutation_importance(rf, X_test, y_test, n_repeats=10,
-                                        random_state=42, n_jobs=2)
-    sorted_idx = result.importances_mean.argsort()
+    Produces plots of feature importance based on prior classification
+    :param clf: Obj - a trained classifier
+    :param X: DataFrame - test samples against features
+    :param y: DataFrame - test targets
+    :param feature_names: list - names of the biomarkers
+    :param X_t: DataFrame - training samples
+    :param y_t: DataFrame - training targets
+    :param save: bool - True is parsing into .docx, if False will output figure
+    :param filename: str - name to save file, only needed if save=True
+    :param loc: str - location for file to be saved, only needed if save=True
+    """
 
-    fig, ax = plt.subplots()
-    ax.boxplot(result.importances[sorted_idx].T,
-               vert=False, labels=X_test.columns[sorted_idx])
-    ax.set_title("Permutation Importances (test set)")
-    fig.tight_layout()
-    plt.show()
-"""
-    clf = GaussianNB()
+    #clf = GaussianNB()
     clf.fit(X_t, y_t)
 
     result = permutation_importance(clf, X, y)
@@ -182,9 +187,17 @@ def permutation_based_feature_importance(clf, X, y, feature_names, X_t, y_t, sav
             plt.savefig(filename)
 
     if loc != "":
-        raise NameError("Collen you lazy af and need to not implement loc here")
+        raise NameError("Implement loc here")
 
 def plot_confusion(classifier, X_test, y_test, class_names):
+    """
+    Plots a confusion matrix
+    :param classifier: (Object) trained classifier
+    :param X_test: DataFrame containing samples
+    :param y_test: DataFrame containing targets
+    :param class_names: list, either HD or WT
+    :return:
+    """
     # https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html#sphx-glr-auto-examples-model-selection-plot-confusion-matrix-py
 
     np.set_printoptions(precision=2)
@@ -206,6 +219,22 @@ def plot_confusion(classifier, X_test, y_test, class_names):
 
 
 def evaluate_model(y_pred, y_true, X_test, y_test, clf, target_names, X_train, y_train, print_scores = False, document=None, fname=None):
+    """
+    Evaluates the success of a model, using various techniques including numerical evaluations looking at accuracy,
+    F1, Fbeta among others, as well as confusion matrices and permutation importances
+
+    :param y_pred: (DataFrame) predicted targets based off of previous classification
+    :param y_true: (DataFrame) actual targets from previous classification
+    :param X_test: (DataFrame) test data containing samples
+    :param y_test: (DataFrame) test targets
+    :param clf: (Object) a trained classifier
+    :param target_names: (list) either HD or WT
+    :param X_train: (DataFrame) containing samples
+    :param y_train: (DataFrame) containing targets
+    :param print_scores: (bool) if true, then files won't be saved, and no .docx will be produced
+    :param document: (Object) .docx file to be produced
+    :param fname: (str) filename to be saved
+    """
     if print_scores:
         ######################################################
         # accuracy
@@ -249,28 +278,6 @@ def evaluate_model(y_pred, y_true, X_test, y_test, clf, target_names, X_train, y
 
 
         print("Average precision score: ", average_precision_score(y_true, y_scores, pos_label="HD"))
-
-        #######################################
-        # ROC
-        # https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_display_object_visualization.html#sphx-glr-auto-examples-miscellaneous-plot-display-object-visualization-py
-        y_score = clf.decision_function(X_test)
-
-        fpr, tpr, _ = roc_curve(y_test, y_score, pos_label=clf.classes_[1])
-        roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
-
-        ##################################
-        # precision recall curve
-
-        prec, recall, _ = precision_recall_curve(y_test, y_score,
-                                                 pos_label=clf.classes_[1])
-        pr_display = PrecisionRecallDisplay(precision=prec,     recall=recall).plot()
-
-        # combine plots
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
-
-        roc_display.plot(ax=ax1)
-        pr_display.plot(ax=ax2)
-        plt.show()
 
     if document is not None:
         if fname is None:
@@ -332,31 +339,6 @@ def evaluate_model(y_pred, y_true, X_test, y_test, clf, target_names, X_train, y
         plt.savefig(memfile2)
         document.add_picture(memfile2, width=Inches(5))
         memfile2.close()
-
-        """
-        """
-        try:
-            document.add_heading("ROC Curve", level = 2)
-            memfile = io.BytesIO()
-            y_score = clf.decision_function(X_test)
-
-            # precision recall curve
-            prec, recall, _ = precision_recall_curve(y_test, y_score,
-                                                     pos_label=clf.classes_[1])
-            pr_display = PrecisionRecallDisplay(precision=prec,     recall=recall).plot()
-
-            # combine plots
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8))
-            fpr, tpr, _ = roc_curve(y_test, y_score, pos_label=clf.classes_[1])
-            roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr)
-            roc_display.plot(ax=ax1)
-            pr_display.plot(ax=ax2)
-            plt.savefig(memfile)
-            document.add_picture(memfile, width=Inches(5))
-            memfile.close()
-
-        except AttributeError:
-            print("Have not implemented ROC with this classifier yet")
 
         """
 

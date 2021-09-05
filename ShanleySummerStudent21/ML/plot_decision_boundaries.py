@@ -9,20 +9,35 @@ from ML import *
 
 class DecisionBoundaries:
     """
-    plots the decision boundaries on data when transformed to 2d using pca (it is impossible to visualise data in more than three dimensions, and often there are more than 3 parameters).
+    Plots the decision boundaries on data when transformed to 2d using pca (it is impossible to visualise data in more than three dimensions, and often there are more than 3 parameters).
 
-    this will not work when all data is from one category as seen in some mRNA data, it returns an error message in this case but continues to process the other data
+    This will not work when all data is from one category as seen in some mRNA data, it returns an error message in this case but continues to process the other data
 
     The model is default linear svm, this can be changed when calling, alongside model name for naming
 
-    if calling plot_all, specify loc when calling
+    If calling plot_all, specify loc when calling
+
+    Attributes:
+        :param loc (str) directory to save figure
+        :param model (obj) the model used to create these plots
+        :param model_name (str) an identifier for this model for producing figures
     """
     def __init__(self, model = svm.SVC(kernel='linear'), name="linear SVC"):
+        """
+        Please call help(DecisionBoundaries) for more info
+        """
         self.loc = ""
         self.model = model
         self.model_name = name
 
     def plot(self, X, y, fname):
+        """
+        Plots one figure based off of one aggregate (X,y) of data
+        :param X: (DataFrame) containing samples and features
+        :param y: (DataFrame) the known phenotypes of X
+        :param fname: (str) name to save this file
+
+        """
         le = LabelEncoder()
         pca = PCA(n_components=2)
 
@@ -54,6 +69,18 @@ class DecisionBoundaries:
             raise ValueError("The number of classes has to be greater than one; got 1 class")
 
     def test_plot(self, clf, X, y, fname, X_o, y_o):
+        """
+        Not fully implemented yet. Partial implementation of plotting training plots alongside test plots on a
+        decision surface - see note when calling
+
+        :param clf: (obj) a trained classifier
+        :param X: (DataFrame) training points
+        :param y: (DataFrame) training targets
+        :param fname: (str) name of file to save
+        :param X_o: (DataFrame) test points
+        :param y_o: (DataFrame) test targets
+        :return:
+        """
         le = LabelEncoder()
         pca = PCA(n_components=2)
 
@@ -86,6 +113,9 @@ class DecisionBoundaries:
 
 
     def plot_all(self):
+        """
+        Plots all decision surfaces based off all files within the given directory (self.loc)
+        """
         chdir(self.loc)
         for filename in glob.glob('*X*'):
             with open(os.path.join(os.getcwd(), filename), 'r') as f:

@@ -15,8 +15,16 @@ from ML import *
 
 
 def filter_method(X, y, cols):
+    """
+    Performs a chi squared test in order to find significant features (m(i)RNAs)
+    :param X: (DataFrame) Contains samples against features
+    :param y: (DataFrame) Targets for X
+    :param cols: (list) All features
+    :return:
+        X_new (DataFrame) Contains significant features
+    """
     # chi squared
-    # X_proc= X.iloc[: , 1:]
+    print(X.shape)
     X_proc = X
     chi = SelectPercentile(chi2, percentile=5)
     X_new = chi.fit_transform(X_proc, y)
@@ -24,6 +32,7 @@ def filter_method(X, y, cols):
     selected_columns = cols[m]
     X_new = pd.DataFrame(X_new)
     X_new.columns = selected_columns
+    print(X_new.shape)
     return X_new
 
 
@@ -32,6 +41,16 @@ def filter_method(X, y, cols):
 
 
 def recursive_ft(X, y, pickle_name, RNA_type, min_features_to_select):
+    """
+    Performs recursive feature elimination on the given data and saves the RFECV object as a pickle object in the same
+    location as where the data was retrieved
+    :param X: (DataFrame) containing filtered features
+    :param y: (DataFrame) targets
+    :param pickle_name: str
+    :param RNA_type: (str) miRNA or mRNA
+    :param min_features_to_select: (int) 1% of total genes
+
+    """
     # Create the RFE object and compute a cross-validated score.
     svc = SVC(kernel="linear")
     # The "accuracy" scoring is proportional to the number of correct
@@ -84,6 +103,16 @@ def recursive_ft(X, y, pickle_name, RNA_type, min_features_to_select):
 
 
 def continue_from_rfecv(file_name, RNA_type, X, min_features_to_select, loc):
+    """
+    Use this method in testing, and you do not want to regenerate the RFECV files. Continues as above, evaluating the
+    RFECV and generating figures to be saved in loc
+
+    :param file_name: (str) filename of pickle file
+    :param RNA_type: (str) miRNA or mRNA
+    :param X: (DataFrame) containing samples
+    :param min_features_to_select: int
+    :param loc: (str) dir of where to save figures
+    """
     with open(file_name, 'rb') as f:
         rfecv = pickle.load(f)
 
@@ -101,7 +130,6 @@ def continue_from_rfecv(file_name, RNA_type, X, min_features_to_select, loc):
 
     dset = pd.DataFrame()
     X1 = pd.DataFrame(X)
-    # todo this minus the chi squared columns
     dset['attr'] = X1.columns
     # drop the unnecessary "samples" header
     # dset = dset.drop(columns="Samples")
@@ -124,10 +152,18 @@ def continue_from_rfecv(file_name, RNA_type, X, min_features_to_select, loc):
 
     important_features = dset.head(n=rfecv.n_features_).attr
     filtered = X[important_features]
+    print(rfecv.n_features_)
     return filtered, important_features
 
 
 def tidy_data(filtered, original, conditions):
+    """
+    Formats the data in a neater format, attaching the phenotypes onto the filtered data
+
+    :param filtered: DataFrame of the filtered data
+    :param original: DataFrame of the original dataset
+    :param conditions: DataFrame of the conditions (HD/WT)
+    """
     # join names from original onto filtered
 
     samples = original.Samples
@@ -176,7 +212,6 @@ def run():
                 X = pd.DataFrame(X)
                 cols = rna.columns.drop(["Unnamed: 0", "Samples", "Conditions"])
                 X_new = filter_method(X, y, cols)
-                # un comment this line if re-generating rfe
 
                 # select at minimum 1% of biomarkers for further investigation
                 min_features_to_select = [round(0.01 * (len(X.columns))) if round(0.01 * (len(X.columns))) > 1 else 1][
@@ -184,7 +219,7 @@ def run():
 
                 # allow rcfev to be more powerful
                 # min_features_to_select = 1
-                recursive_ft(X_new, y, (name + "_rfe"), name, min_features_to_select)
+                #recursive_ft(X_new, y, (name + "_rfe"), name, min_features_to_select)
 
                 fig_save_loc = r"../../../Figures/" + d
                 RNA_data, RNAs = continue_from_rfecv((name + "_rfe.pickle"), name, X_new, min_features_to_select,

@@ -143,7 +143,7 @@ def prepare_for_box_plot(df):
     merged = m.merge(con, left_index=True, right_index=True)
     return merged
 
-dir = r"C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\FilteredData\\age"
+dir = r"/Early Detection/Data/FilteredData/age"
 os.chdir(dir)
 
 loc = r"C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Figures\\PreSMOTE\\"
@@ -172,7 +172,7 @@ for filename in glob.glob("X*"):
         visualise(x, df, name, loc)
         #box_plot(df, loc, name)
 
-dir = r"C:\\Users\\Colle\\OneDrive\\Documents\\Boring\\2021 Summer Internship\\ShanleySummerStudent21\\Early Detection\\Data\\Preprocessed_Data\\"
+dir = r"/Early Detection/Data/Preprocessed_Data\\"
 os.chdir(dir)
 """
 for filename in glob.glob('*.csv'):
