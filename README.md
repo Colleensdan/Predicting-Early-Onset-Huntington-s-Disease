@@ -27,11 +27,10 @@ On first run to generate data:
             -> InputForML/no_outliers
             -> InputForML/outliers
 
-Machine Learning
-    Run Learn.py, see the bottom of the script for example running
+Machine Learning:
+    Run Learn.py, see the bottom of the script for exemplar running
 
-Each module is documented, please email me if you have any issues running this/understanding the modules
-    Just to let you know, I am away from the 6th-12th September so will be unlikely to reply to emails within this time
+Each module is documented, please email me if you have any issues running or understanding the modules.
 
 
 You can view the presentation at: https://www.overleaf.com/read/mjkzgrbqgqhk
